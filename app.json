@@ -1,0 +1,12 @@
+{
+  "name": "patinette-app",
+  "displayName": "patinette-app",
+  "expo": {
+    "name": "patinette-app",
+    "slug": "patinette-app",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
