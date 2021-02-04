@@ -1,4 +1,4 @@
-from flask import request, render_template, make_response
+from flask import request
 from secrets import token_hex
 import re
 
@@ -46,7 +46,7 @@ def read_user(id):
     user = User.query.filter_by(id=id).first()
     if user:
         return user.as_dict()
-    return make_response(f"No user found for the id `{id}`")
+    return create_error('Not Found', 404, ['resource does not exist']), 404
 
 @app.route('/user', methods=['POST'])
 def create_user():
@@ -89,21 +89,21 @@ def update_user(user_id):
                 return create_error('Bad Request', 400, ['no json sent']), 400
             username = request.json.get('username')
             email = request.json.get('email')
-            pseudo = request.json.get('pseudo')
+            isrefiller = request.json.get('isrefiller')
             password = request.json.get('password')
-            if username is None  or password is None:
-                error = 'missing either username or password'
-            elif not wordRe.fullmatch(username):
+            # if username is None  or password is None:
+            #     error = 'missing either username or password'
+            if username and not wordRe.fullmatch(username):
                 error = 'invalid username (3 to 12 chars, alphanumeric, dashes and underscores)'
             elif User.query.filter_by(username=username).first() is not None and User.query.filter_by(username=username).first().id != user_id:
                 error = 'username already in use on another account'
             else:
                 userToUpdate = User.query.filter_by(id=user_id).first()
                 if userToUpdate is not None:
-                    userToUpdate.username = username
-                    userToUpdate.email = email
-                    userToUpdate.pseudo = pseudo
-                    userToUpdate.password = hash_password(password)
+                    userToUpdate.username = username if username else userToUpdate.username
+                    userToUpdate.email = email if email else userToUpdate.email
+                    userToUpdate.isrefiller = isrefiller if isrefiller else userToUpdate.isrefiller
+                    userToUpdate.password = hash_password(password) if password else userToUpdate.password
                     db.session.commit()
                     return { 'message' : 'OK', 'data': userToUpdate.as_dict() }, 201
                 else:
@@ -118,3 +118,51 @@ def update_user(user_id):
             return { 'message': 'OK', 'data': user.as_dict() }, 200
         else:
             return create_error('Not Found', 404, ['resource does not exist']), 404
+
+@app.route('/vehicle', methods=['POST'])
+@auth_required
+def create_vehicle():
+    if request.method == 'POST':
+        if not request.json:
+            return create_error('Bad Request', 400, ['no json sent']), 400
+        battery = request.json.get('battery')
+        latitude = request.json.get('latitude')
+        longitude = request.json.get('longitude')
+        vehicle_type = request.json.get('vehicle_type')
+        available = request.json.get('available')
+        #TODO:better verifs
+        battery = battery if battery else 100
+        vehicle_type = vehicle_type if vehicle_type else 'trottinette'
+        available = available if available else True
+        new_vehicle = Vehicle(
+            battery=battery,
+            latitude=latitude,
+            longitude=longitude,
+            vehicle_type=vehicle_type,
+            available=available)
+        db.session.add(new_vehicle)
+        db.session.commit()
+        return { 'message' : 'OK', 'data': new_vehicle.as_dict() }, 201
+
+@app.route('/run', methods=['POST'])
+@auth_required
+def create_run():
+    if request.method == 'POST':
+        if not request.json:
+            return create_error('Bad Request', 400, ['no json sent']), 400
+        startedAt = request.json.get('startedAt')
+        endedAt = request.json.get('endedAt')
+        user_id = request.json.get('user_id')
+        vehicle_id = request.json.get('vehicle_id')
+        #TODO:better verifs
+        if not user_id or not vehicle_id:
+            return create_error('Bad Request', 400, ['missing at least one of : user_id, vehicle_id']), 400
+
+        new_run = Run(
+            startedAt=startedAt,
+            endedAt=endedAt,
+            user_id=user_id,
+            vehicle_id=vehicle_id)
+        db.session.add(new_run)
+        db.session.commit()
+        return { 'message' : 'OK', 'data': new_run.as_dict() }, 201

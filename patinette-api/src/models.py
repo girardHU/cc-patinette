@@ -127,8 +127,7 @@ class Run(db.Model, JsonableModel):
         db.DateTime,
         index=False,
         unique=False,
-        nullable=False,
-        default=dt.utcnow
+        nullable=True
     )
     duration = db.Column(
         db.Integer,

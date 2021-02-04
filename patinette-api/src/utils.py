@@ -1,3 +1,4 @@
+from flask import request
 import os, hashlib, binascii
 from functools import wraps
 
