@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, Switch, View, TextInput, Text, Alert, Button } from 'react-native';
 
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 export interface Props {
   navigation: any;

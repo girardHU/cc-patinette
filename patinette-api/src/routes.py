@@ -41,11 +41,18 @@ def login():
         return create_error('Bad Request', 400, [error]), 400
 
 
-@app.route('/user/<id>', methods=['GET'])
-def read_user(id):
-    user = User.query.filter_by(id=id).first()
+@app.route('/user/<int:user_id>', methods=['GET'])
+def read_user(user_id):
+    user = User.query.filter_by(id=user_id).first()
     if user:
-        return user.as_dict()
+        return user.as_dict(), 200
+    return create_error('Not Found', 404, ['resource does not exist']), 404
+
+@app.route('/user/<username>', methods=['GET'])
+def read_user_by_username(username):
+    user = User.query.filter_by(username=username).first()
+    if user:
+        return user.as_dict(), 200
     return create_error('Not Found', 404, ['resource does not exist']), 404
 
 @app.route('/user', methods=['POST'])
@@ -166,3 +173,5 @@ def create_run():
         db.session.add(new_run)
         db.session.commit()
         return { 'message' : 'OK', 'data': new_run.as_dict() }, 201
+
+# @app.route('/run/new/')

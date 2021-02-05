@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, TextInput, Alert, Button } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 export interface Props {
@@ -23,10 +24,54 @@ export default class Login extends React.Component<Props, State> {
     };
   }
 
+  async storeData(storageKey: string, value: string) {
+    try {
+      await AsyncStorage.setItem(`@${storageKey}`, value)
+      console.log(`stored ${storageKey} with value ${value}`)
+    } catch (e) {
+      // saving error
+      console.log('error in Register LocalStorage storeData :')
+      console.log(e)
+    }
+  }
+
   onLogin() {
     const { username, password } = this.state;
 
     Alert.alert('Credentials', `${username} + ${password}`);
+
+    axios.get(`http://192.168.1.140:5000/user/${username}`)
+      .then(responseuser => {
+        // console.log(response)
+        console.log(responseuser)
+        if (responseuser.status == 200) {
+          axios.post('http://192.168.1.140:5000/login', {
+            username: username,
+            password: password
+          })
+            .then(responsetoken => {
+              console.log(responsetoken.data.data.code)
+              // console.log(responseuser.data.data.id)
+              // console.log(responsetoken.data.data.code)
+              // this.storeData(response.data)
+              this.storeData('id', JSON.stringify(responseuser.data.id))
+              this.storeData('username', JSON.stringify(username))
+              this.storeData('token', responsetoken.data.data.code)
+              this.props.navigation.navigate('LoggedHome')
+              return true;
+            })
+            .catch(error => {
+              console.log(error);
+              return false;
+            })
+        }
+      })
+      .catch(error => {
+        console.log(error);
+        return false;
+      })
+
+
   }
 
   onNext() {
