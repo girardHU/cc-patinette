@@ -2,6 +2,7 @@ from flask import request
 from secrets import token_hex
 import re
 
+from sqlalchemy import text
 from flask import current_app as app
 from src.models import db, User, Token, Run, Vehicle, Discount
 from src.utils import *
@@ -150,6 +151,25 @@ def create_vehicle():
         db.session.add(new_vehicle)
         db.session.commit()
         return { 'message' : 'OK', 'data': new_vehicle.as_dict() }, 201
+
+@app.route('/vehicle', methods=['GET'])
+def list_vehicles():
+    if request.method == 'GET':
+        vehicle_type = None
+        if request.json:
+            vehicle_type = request.json.get('vehicle_type')
+
+        if vehicle_type:
+            vehicles = Vehicle.query.filter_by(vehicle_type=vehicle_type).order_by(text('id desc')).all()
+        else:
+            vehicles = Vehicle.query.order_by(text('id desc')).all()
+        printable_vehicle = []
+        for vehicle in vehicles:
+            printable_vehicle.append(vehicle.as_dict())
+        if printable_vehicle:
+            return { 'message': 'OK', 'data': printable_vehicle }, 200
+        else:
+            return create_error('Not Found', 404, ['No vehicle was found']), 404
 
 @app.route('/run', methods=['POST'])
 @auth_required
